@@ -429,6 +429,7 @@ async function createIdToken(
 	accessToken?: string,
 	extraClaims?: Record<string, unknown>,
 	authenticationContext?: OAuthAuthenticationContext,
+	grantId?: string,
 ) {
 	const iat = Math.floor(Date.now() / 1000);
 	const exp = iat + (opts.idTokenExpiresIn ?? 36000);
@@ -442,6 +443,7 @@ async function createIdToken(
 					user,
 					scopes,
 					metadata: parseClientMetadata(client.metadata),
+					grantId,
 				})
 			: undefined,
 	);
@@ -1599,6 +1601,7 @@ async function createUserTokens(
 						sessionId,
 						resources: params.resources,
 						metadata,
+						grantId,
 					})),
 					...(params.idTokenClaims ?? {}),
 				}
@@ -1612,6 +1615,7 @@ async function createUserTokens(
 				scopes: effectiveScopes,
 				metadata,
 				verificationValue,
+				grantId,
 			})
 		: undefined;
 
@@ -1684,6 +1688,7 @@ async function createUserTokens(
 				metadata,
 				perRequestClaims,
 				resourcePolicyClaims: grantIssuance.resourceCustomClaims,
+				grantId,
 			})
 		: undefined;
 
@@ -1824,6 +1829,7 @@ async function createUserTokens(
 				accessToken.token,
 				additionalIdTokenClaims,
 				authenticationContext,
+				grantId,
 			)
 		: undefined;
 
