@@ -34,6 +34,7 @@ import {
 } from "./dpop";
 import {
 	collectExtensionIdTokenClaims,
+	collectExtensionTokenResponseFields,
 	getExtensionGrantHandler,
 	getSupportedGrantTypes,
 	runBeforeTokenIssuance,
@@ -1666,6 +1667,10 @@ async function createUserTokens(
 
 	// Resolved after the policy hook and before any token side effect (refresh
 	// rotation, DB writes), so a refusal reaches no response callback.
+	const extensionFields = await collectExtensionTokenResponseFields(
+		opts,
+		createIssuanceInput,
+	);
 	const customFields = opts.customTokenResponseFields
 		? await opts.customTokenResponseFields({
 				grantType,
@@ -1867,6 +1872,7 @@ async function createUserTokens(
 		: undefined;
 
 	const responseBody: OAuthTokenResponse = {
+		...extensionFields,
 		...customFields,
 		...(params.tokenResponse ?? {}),
 		...(issuedDetails?.length ? grantedClaims : {}),
