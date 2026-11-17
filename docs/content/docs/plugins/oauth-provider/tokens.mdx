@@ -154,7 +154,7 @@ Each refresh issues a new refresh token and invalidates the old one, following [
 
 A refresh keeps the `sid` of the session that authorized the grant while that session is live. Once the session has expired or been deleted, the refresh still succeeds, and the new access and ID tokens omit `sid` so that introspection and UserInfo accept them.
 
-Keep the default, `0`, unless your clients lose refresh responses. To let a client retry a refresh after a lost response, set `refreshTokenReuseInterval` to a number of seconds. A retry within that window gets the same response back, including the replacement refresh token. Overlapping in-flight refreshes of the same token get that response too. The retry gets that response only when it uses the same client, scopes, resources, and DPoP key as the first refresh. A retry that differs but is otherwise valid gets `invalid_grant`.
+Keep the default, `0`, unless your clients lose refresh responses. To let a client retry a refresh after a lost response, set `refreshTokenReuseInterval` to a number of seconds. A retry within that window gets the same response back, including the replacement refresh token. Overlapping in-flight refreshes of the same token get that response too: the duplicate waits for the first request to store it, for at most 5 seconds, and fails with `invalid_grant` if it does not appear. The retry gets that response only when it uses the same client, scopes, resources, and DPoP key as the first refresh. A retry that differs but is otherwise valid gets `invalid_grant`.
 
 Inside the window, reuse is not treated as replay, and the token family is never revoked. A stolen rotated token that passes these checks therefore gets the replacement refresh token. Keep the interval short.
 
