@@ -16,7 +16,7 @@ description: Control which tokens the provider issues, for which APIs, and for h
 | `private_key_jwt`     | A signed JWT assertion. See [Private key JWT](/docs/plugins/oauth-provider/clients#private-key-jwt). |
 | `none`                | Public client. PKCE is required.                                                                     |
 
-To get a JWT access token, include a `resource` in the request and enable the JWT plugin. The token's `aud` is that resource. When the scopes also include `openid`, `aud` is an array that also holds the UserInfo endpoint URL. If either is missing, the access token is opaque. Error codes are listed in [Token errors](/docs/plugins/oauth-provider/reference#token-errors).
+To get a JWT access token, include a `resource` in the request and enable the JWT plugin. The token's `aud` is that resource. When the scopes also include `openid`, `aud` is an array that also holds the UserInfo endpoint URL. If either is missing, the access token is opaque. A request without `resource` therefore gets an opaque token with no `aud` claim, and the provider has no default resource. [RFC 8707 §2.1](https://datatracker.ietf.org/doc/html/rfc8707#section-2.1) lets a provider process such a request without a specific resource, use a default resource, or fail it with `invalid_target`. Better Auth processes it without a resource. [RFC 8707 §2](https://datatracker.ietf.org/doc/html/rfc8707#section-2) says access tokens should be restricted to the audience of the requested resources, and a resource server that sets `audience` rejects a token with no `aud`. Error codes are listed in [Token errors](/docs/plugins/oauth-provider/reference#token-errors).
 
 ## Scopes
 
@@ -73,6 +73,8 @@ A string uses the plugin defaults. An object sets per-resource policy:
 | `disabled`                      | Stop issuing tokens for this resource. Tokens already issued still verify until they expire.        |
 
 In a request for several resources, a `signingAlgorithm` or `signingKeyId` set on one of them applies to the whole token, and resources without one do not conflict with it. The request fails with `invalid_request` only when two resources set different values, because one token carries one signature. To fix it, set the same value on both resources, or leave it unset on one of them.
+
+In a request for several resources, the granted scopes are narrowed to the intersection of the `allowedScopes` of the requested resources. A resource without `allowedScopes` does not restrict, and accepts any requested scope. [RFC 8707 §2.2](https://datatracker.ietf.org/doc/html/rfc8707#section-2.2) says the access rights of such a token are the product of the scopes at every target service, and Better Auth narrows them instead. The token's `scope` does not record which resource each scope was meant for, so use scope names that mean the same thing at every resource a client can request together.
 
 The resources you configure are written to the `oauthResource` table at startup. Set `resourceSeedMode` to choose what happens to a row that already exists:
 
