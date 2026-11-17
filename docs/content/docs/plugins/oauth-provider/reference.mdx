@@ -344,13 +344,19 @@ Errors use the [RFC 6749 §5.2](https://datatracker.ietf.org/doc/html/rfc6749#se
 
 Every 401 from an endpoint that authenticates a client or an access token carries a `WWW-Authenticate` challenge, as [RFC 9110 §15.5.2](https://www.rfc-editor.org/rfc/rfc9110#section-15.5.2) requires. A client-authentication failure that the endpoint reports as 401 carries a `Basic` challenge. If the client sent an `Authorization` header with another scheme, the challenge names that scheme instead. When `allowUnauthenticatedClientRegistration` is off, client registration without a session or an initial access token returns 401 with a bare `Bearer` challenge.
 
-The end-session endpoint does not follow this rule. It authenticates with `id_token_hint`, not with an HTTP scheme, and its 401 responses carry no `WWW-Authenticate` challenge. It returns 401 `invalid_client` when the client has not enabled end-session, and 401 `invalid_token` for an invalid hint when no browser confirmation applies. [RFC 9110 §15.5.2](https://www.rfc-editor.org/rfc/rfc9110#section-15.5.2) says a 401 response must carry a challenge.
-
 The token endpoint reports most client-authentication failures as 400 with no challenge, as [RFC 6749 §5.2](https://datatracker.ietf.org/doc/html/rfc6749#section-5.2) allows. It returns 401 with a challenge when the client authenticated through the `Authorization` header, and for some other failures, such as a `private_key_jwt` assertion that fails signature or claim verification.
 
 The response also lists `WWW-Authenticate` in `Access-Control-Expose-Headers`, so a browser client on another origin can read the challenge. Names that a hook already exposed stay in the list.
 
-A request with no `client_id` returns `invalid_request`. A request that names a confidential client but sends no secret returns `invalid_client` on the `client_credentials` and `refresh_token` grants. On the `authorization_code` grant, a request that sends neither a secret nor a `code_verifier` returns `invalid_request`, because the endpoint checks for one of them before it looks up the client. With a `code_verifier` and no secret, a confidential client gets `invalid_client`. [RFC 6749 §5.2](https://datatracker.ietf.org/doc/html/rfc6749#section-5.2) lists "no client authentication included" under `invalid_client`, so the `invalid_request` answer departs from that text.
+The end-session endpoint does not follow the rule that every 401 carries a challenge. It authenticates with `id_token_hint`, not with an HTTP scheme. Its 401 responses carry no `WWW-Authenticate` challenge, although [RFC 9110 §15.5.2](https://www.rfc-editor.org/rfc/rfc9110#section-15.5.2) says a 401 response must carry one. The endpoint returns 401 `invalid_client` when the client has not enabled end-session, and 401 `invalid_token` for an invalid hint when no browser confirmation applies. See [RP-initiated logout](/docs/plugins/oauth-provider/openid-connect#rp-initiated-logout).
+
+The token endpoint answers a request with missing client credentials by grant:
+
+* A request with no `client_id` returns `invalid_request`.
+* A request that names a confidential client but sends no secret returns `invalid_client` on the `client_credentials` and `refresh_token` grants.
+* On the `authorization_code` grant, a request with neither a secret nor a `code_verifier` returns `invalid_request`. The endpoint checks for one of them before it looks up the client. With a `code_verifier` and no secret, a confidential client gets `invalid_client`.
+
+[RFC 6749 §5.2](https://datatracker.ietf.org/doc/html/rfc6749#section-5.2) lists "no client authentication included" under `invalid_client`. The `invalid_request` answers depart from that text.
 
 | Error                    | Status | Returned when                                                                                                                            |
 | ------------------------ | ------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
