@@ -382,6 +382,9 @@ function createMetadataResolver(
 	// The latest fetch the lease retired for a client, until it settles or a
 	// newer fetch for that client starts. Only this fetch may be accepted late,
 	// and an evicted marker makes the late document unusable, which is safe.
+	// Past `maxCacheEntries`, only markers of fetches that started more than a
+	// fetch budget window ago are evicted. The younger ones are bounded by
+	// `maximumFetchesPerMinute`.
 	const leaseRetiredFetchByClientId = new Map<string, InFlightMetadataFetch>();
 	const lastFetchStartAtMsByClientId = new Map<string, number>();
 	const fetchStateByOrigin = new Map<string, OriginFetchState>();
@@ -495,12 +498,14 @@ function createMetadataResolver(
 			if (nowMs - inFlight.startedAtMs >= JOINED_FETCH_WAIT_MS) {
 				retireFetch(inFlightClientId, inFlight);
 				leaseRetiredFetchByClientId.delete(inFlightClientId);
-				while (leaseRetiredFetchByClientId.size >= maxCacheEntries) {
-					const oldestClientId = leaseRetiredFetchByClientId
-						.keys()
-						.next().value;
-					if (typeof oldestClientId !== "string") break;
-					leaseRetiredFetchByClientId.delete(oldestClientId);
+				for (const [retiredClientId, retired] of leaseRetiredFetchByClientId) {
+					if (
+						leaseRetiredFetchByClientId.size < maxCacheEntries ||
+						nowMs - retired.startedAtMs < FETCH_BUDGET_WINDOW_MS
+					) {
+						break;
+					}
+					leaseRetiredFetchByClientId.delete(retiredClientId);
 				}
 				leaseRetiredFetchByClientId.set(inFlightClientId, inFlight);
 			}

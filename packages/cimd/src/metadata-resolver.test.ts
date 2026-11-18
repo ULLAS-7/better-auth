@@ -723,6 +723,60 @@ describe("CIMD metadata resolver", () => {
 			expect(fetchClientMetadataResource).toHaveBeenCalledTimes(2);
 		});
 
+		it("accepts a lease-retired fetch's late document when more fetches were retired than maxCacheEntries", async () => {
+			const lateClientId = "https://retired-many.example/a.json";
+			const stuckClientIds = [
+				"https://retired-many.example/b.json",
+				"https://retired-many.example/d.json",
+				"https://retired-many.example/e.json",
+			];
+			const lateResponse = deferred<Response>();
+			let lateFetchStarted = false;
+			const fetchClientMetadataResource = vi.fn(
+				async (input: RequestInfo | URL) => {
+					const clientId = String(input);
+					if (clientId === lateClientId && !lateFetchStarted) {
+						lateFetchStarted = true;
+						return lateResponse.promise;
+					}
+					if (stuckClientIds.includes(clientId)) {
+						return new Promise<Response>(() => {});
+					}
+					return documentResponse(sampleMetadata(clientId));
+				},
+			);
+			const resolve = createCimdMetadataResolver({
+				fetchClientMetadataResource,
+				maxCacheEntries: 2,
+				metadataFetchPolicy: { minimumFetchInterval: 0 },
+			});
+			const { ctx } = await createRequestContext();
+			vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
+
+			const owner = resolve(ctx, lateClientId);
+			void resolve(ctx, stuckClientIds[0]!).catch(() => {});
+			await vi.advanceTimersByTimeAsync(10_000);
+			// The lease retires both fetches, then two more stuck fetches are
+			// retired, so more fetches were retired than maxCacheEntries.
+			await resolve(ctx, "https://retired-many.example/c.json");
+			void resolve(ctx, stuckClientIds[1]!).catch(() => {});
+			void resolve(ctx, stuckClientIds[2]!).catch(() => {});
+			await vi.advanceTimersByTimeAsync(10_000);
+			await resolve(ctx, "https://retired-many.example/f.json");
+			expect(fetchClientMetadataResource).toHaveBeenCalledTimes(6);
+
+			const late = documentResponse(
+				sampleMetadata(lateClientId, { client_name: "Late" }),
+			);
+			Object.defineProperty(late, "body", { value: null });
+			lateResponse.resolve(late);
+			expect(await owner).toMatchObject({
+				fromCache: false,
+				metadata: { client_name: "Late" },
+			});
+			expect(fetchClientMetadataResource).toHaveBeenCalledTimes(6);
+		});
+
 		it("does not accept a lease-retired fetch's document over a replacement that cannot be cached", async () => {
 			const clientId = "https://retired-no-store.example/metadata.json";
 			const otherClientId =
