@@ -1,5 +1,11 @@
 # @better-auth/core
 
+## 1.7.27
+
+### Patch Changes
+
+- [#12807](https://github.com/better-auth/better-auth/pull/12807) [`559c837`](https://github.com/better-auth/better-auth/commit/559c837ffad761dd085ef732e886a2a4d72150a3) Thanks [@bytaesu](https://github.com/bytaesu)! - The edge and browser build now uses the runtime's `AsyncLocalStorage` when one exists, so overlapping requests no longer read each other's request state. Where none exists, the fallback no longer keeps the store of a request that has finished or thrown.
+
 ## 1.7.26
 
 ### Patch Changes

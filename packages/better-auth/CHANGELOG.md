@@ -1,5 +1,26 @@
 # better-auth
 
+## 1.7.27
+
+### Patch Changes
+
+- [#12809](https://github.com/better-auth/better-auth/pull/12809) [`1ab8e21`](https://github.com/better-auth/better-auth/commit/1ab8e21f47f5f96913dc532c08898291092038f6) Thanks [@bytaesu](https://github.com/bytaesu)! - Validate the request origin on `/sign-in/anonymous`, the same way the other sign-in endpoints do. A browser request from an origin outside `trustedOrigins` now gets a 403.
+
+- [#12805](https://github.com/better-auth/better-auth/pull/12805) [`c6fd56d`](https://github.com/better-auth/better-auth/commit/c6fd56d0e38d9122a65a276148c40b00cfbc845e) Thanks [@bytaesu](https://github.com/bytaesu)! - Fix `POST` requests sent without a body, such as `/sign-out` or `/revoke-sessions`, failing with 415 on Deno, Next.js, Nuxt and other servers that pass an empty stream as the request body.
+
+- [#12810](https://github.com/better-auth/better-auth/pull/12810) [`d0a8cab`](https://github.com/better-auth/better-auth/commit/d0a8cabc1a46d0ac6ec0a59d870f1ece1bd1d39f) Thanks [@bytaesu](https://github.com/bytaesu)! - Fix the phone number plugin answering `/update-user` with a 500 when the request has no body. It now gets the same 400 as without the plugin.
+
+- [#12810](https://github.com/better-auth/better-auth/pull/12810) [`d0a8cab`](https://github.com/better-auth/better-auth/commit/d0a8cabc1a46d0ac6ec0a59d870f1ece1bd1d39f) Thanks [@bytaesu](https://github.com/bytaesu)! - Fix the username plugin answering `/sign-up/email` and `/update-user` with a 500 when the request has no body. It now gets the same 400 as without the plugin.
+
+- Updated dependencies [[`559c837`](https://github.com/better-auth/better-auth/commit/559c837ffad761dd085ef732e886a2a4d72150a3)]:
+  - @better-auth/core@1.7.27
+  - @better-auth/drizzle-adapter@1.7.27
+  - @better-auth/kysely-adapter@1.7.27
+  - @better-auth/memory-adapter@1.7.27
+  - @better-auth/mongo-adapter@1.7.27
+  - @better-auth/prisma-adapter@1.7.27
+  - @better-auth/telemetry@1.7.27
+
 ## 1.7.26
 
 ### Patch Changes
